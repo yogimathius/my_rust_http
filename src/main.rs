@@ -23,15 +23,22 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
-    let http_request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
+    
+    if request_line == "GET / HTTP/1.1" {
+        respond_with_index(stream);
+    } else {
+        print!("Not Found");
+        respond_with_not_found(stream);
+    }
+}
 
-    println!("Request: {:#?}", http_request);
+fn respond_with_index(mut stream: TcpStream) {
+    let response = "HTTP/1.1 200 OK\r\n\r\n<!DOCTYPE html><html><head><title>Index</title></head><body><h1>Hello, World!</h1></body></html>";
+    stream.write_all(response.as_bytes()).unwrap();
+}
 
-    let response = "HTTP/1.1 200 OK\r\n\r\n";
-
+fn respond_with_not_found(mut stream: TcpStream) {
+    let response = "HTTP/1.1 404 NOT FOUND\r\n\r\n<!DOCTYPE html><html><head><title>Not Found</title></head><body><h1>Not Found</h1></body></html>";
     stream.write_all(response.as_bytes()).unwrap();
 }
